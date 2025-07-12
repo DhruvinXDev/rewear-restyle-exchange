@@ -5,9 +5,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Link, useNavigate } from "react-router-dom"
 import { Shield, Eye, EyeOff, ArrowRight, AlertTriangle } from "lucide-react"
-import { supabase } from "@/integrations/supabase/client"
+import { useAuth } from "@/hooks/useAuth"
 import { useToast } from "@/hooks/use-toast"
-import { profileService } from "@/services/profileService"
 
 const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false)
@@ -19,57 +18,20 @@ const AdminLogin = () => {
 
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { login } = useAuth()
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      // Step 1: Sign in with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      })
-
-      if (authError || !authData.user) {
-        toast({
-          title: "Login failed",
-          description: authError?.message || "Invalid credentials",
-          variant: "destructive"
-        })
-        return
-      }
-
-      // Step 2: Check role from user_profiles
-      const profileData = await profileService.getUserProfile(authData.user.id)
-
-      if (!profileData) {
-        // Create profile if it doesn't exist
-        const newProfile = await profileService.createInitialProfile(authData.user)
-        if (!newProfile) {
-          toast({
-            title: "Error",
-            description: "Failed to create user profile",
-            variant: "destructive"
-          })
-          return
-        }
-      }
-
-      // Get the profile data (either existing or newly created)
-      const userProfile = profileData || await profileService.getUserProfile(authData.user.id)
-
-      if (!userProfile) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch user profile",
-          variant: "destructive"
-        })
-        return
-      }
-
-      // Step 3: Check if user is admin
-      if (userProfile.role !== 'admin') {
+      // Login with custom auth service
+      await login(formData.email, formData.password)
+      
+      // Check if user is admin (this will be handled by the backend)
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
+      
+      if (currentUser.role !== 'admin') {
         toast({
           title: "Access Denied",
           description: "You are not authorized to access the admin panel. Only admins can access this area.",
@@ -77,11 +39,12 @@ const AdminLogin = () => {
         })
         
         // Sign out the user since they're not an admin
-        await supabase.auth.signOut()
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('user')
         return
       }
 
-      // Step 4: Success - redirect to admin panel
+      // Success - redirect to admin panel
       toast({
         title: "Welcome, Admin!",
         description: "You have successfully signed in to the admin panel.",
@@ -89,11 +52,11 @@ const AdminLogin = () => {
       
       navigate("/admin")
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Admin login error:', error)
       toast({
         title: "Login failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: error.response?.data?.message || "An unexpected error occurred. Please try again.",
         variant: "destructive"
       })
     } finally {

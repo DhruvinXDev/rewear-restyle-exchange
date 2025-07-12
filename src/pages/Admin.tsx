@@ -25,7 +25,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
-import { profileService } from "@/services/profileService"
 import Header from "@/components/common/Header"
 import product1 from "@/assets/product-1.jpg"
 import product2 from "@/assets/product-2.jpg"
@@ -51,8 +50,9 @@ const Admin = () => {
       }
 
       try {
-        const profile = await profileService.getUserProfile(user.id)
-        if (profile && profile.role === 'admin') {
+        // Check if user is admin from localStorage
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
+        if (currentUser.role === 'admin') {
           setIsAdmin(true)
         } else {
           setIsAdmin(false)

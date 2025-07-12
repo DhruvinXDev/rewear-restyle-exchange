@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Link, useNavigate } from "react-router-dom"
 import { User, Eye, EyeOff, ArrowRight } from "lucide-react"
-import { supabase } from "@/integrations/supabase/client"
+import { useAuth } from "@/hooks/useAuth"
 import { useToast } from "@/hooks/use-toast"
 
 const Login = () => {
@@ -17,34 +17,23 @@ const Login = () => {
 
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+      await login(formData.email, formData.password)
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully signed in.",
       })
-
-      if (error) {
-        toast({
-          title: "Login failed",
-          description: error.message,
-          variant: "destructive"
-        })
-      } else {
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully signed in.",
-        })
-        navigate("/")
-      }
-    } catch (error) {
+      navigate("/")
+    } catch (error: any) {
       toast({
         title: "Login failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: error.response?.data?.message || "An unexpected error occurred. Please try again.",
         variant: "destructive"
       })
     } finally {

@@ -1,5 +1,15 @@
-import { supabase } from '@/integrations/supabase/client'
-import { User } from '@supabase/supabase-js'
+import api from './api'
+
+export interface User {
+  id: string
+  email: string
+  user_metadata?: {
+    name?: string
+    phone?: string
+    bio?: string
+    avatar_url?: string
+  }
+}
 
 export interface UserProfile {
   id: string
@@ -41,20 +51,10 @@ class ProfileService {
   // Get user profile by user ID
   async getUserProfile(userId: string): Promise<UserProfile | null> {
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error) {
-        console.error('Error fetching user profile:', error)
-        return null
-      }
-
-      return data
+      const response = await api.get(`/profile/${userId}`)
+      return response.data
     } catch (error) {
-      console.error('Error in getUserProfile:', error)
+      console.error('Error fetching user profile:', error)
       return null
     }
   }
@@ -62,20 +62,10 @@ class ProfileService {
   // Create or update user profile
   async upsertUserProfile(profile: Partial<UserProfile>): Promise<UserProfile | null> {
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .upsert(profile, { onConflict: 'id' })
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error upserting user profile:', error)
-        return null
-      }
-
-      return data
+      const response = await api.post('/profile', profile)
+      return response.data
     } catch (error) {
-      console.error('Error in upsertUserProfile:', error)
+      console.error('Error upserting user profile:', error)
       return null
     }
   }
@@ -83,21 +73,10 @@ class ProfileService {
   // Update user profile
   async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile | null> {
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .update(updates)
-        .eq('id', userId)
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error updating user profile:', error)
-        return null
-      }
-
-      return data
+      const response = await api.put(`/profile/${userId}`, updates)
+      return response.data
     } catch (error) {
-      console.error('Error in updateUserProfile:', error)
+      console.error('Error updating user profile:', error)
       return null
     }
   }
@@ -105,36 +84,10 @@ class ProfileService {
   // Get user's swap history
   async getSwapHistory(userId: string): Promise<SwapHistory[]> {
     try {
-      const { data, error } = await supabase
-        .from('swap_history')
-        .select(`
-          *,
-          sender:user_profiles!swap_history_sender_id_fkey(name),
-          receiver:user_profiles!swap_history_receiver_id_fkey(name),
-          listing:listings(title, image_url)
-        `)
-        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching swap history:', error)
-        return []
-      }
-
-      return data?.map(item => ({
-        id: item.id,
-        sender_id: item.sender_id,
-        receiver_id: item.receiver_id,
-        listing_id: item.listing_id,
-        status: item.status,
-        created_at: item.created_at,
-        sender_name: item.sender?.name || 'Unknown',
-        receiver_name: item.receiver?.name || 'Unknown',
-        item_title: item.listing?.title || 'Unknown Item',
-        item_image: item.listing?.image_url
-      })) || []
+      const response = await api.get(`/profile/${userId}/swaps`)
+      return response.data
     } catch (error) {
-      console.error('Error in getSwapHistory:', error)
+      console.error('Error fetching swap history:', error)
       return []
     }
   }
@@ -142,20 +95,10 @@ class ProfileService {
   // Get user's points history
   async getPointsHistory(userId: string): Promise<PointsHistory[]> {
     try {
-      const { data, error } = await supabase
-        .from('points_history')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching points history:', error)
-        return []
-      }
-
-      return data || []
+      const response = await api.get(`/profile/${userId}/points`)
+      return response.data
     } catch (error) {
-      console.error('Error in getPointsHistory:', error)
+      console.error('Error fetching points history:', error)
       return []
     }
   }
@@ -163,35 +106,12 @@ class ProfileService {
   // Add points to user
   async addPoints(userId: string, points: number, action: string, description: string): Promise<boolean> {
     try {
-      // Start a transaction
-      const { error: pointsError } = await supabase
-        .from('points_history')
-        .insert({
-          user_id: userId,
-          points,
-          action,
-          description
-        })
-
-      if (pointsError) {
-        console.error('Error adding points history:', pointsError)
-        return false
-      }
-
-      // Update user's total points
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({ 
-          points: supabase.rpc('increment_points', { user_id: userId, points_to_add: points })
-        })
-        .eq('id', userId)
-
-      if (updateError) {
-        console.error('Error updating user points:', updateError)
-        return false
-      }
-
-      return true
+      const response = await api.post(`/profile/${userId}/points`, {
+        points,
+        action,
+        description
+      })
+      return response.status === 200
     } catch (error) {
       console.error('Error in addPoints:', error)
       return false
@@ -228,23 +148,16 @@ class ProfileService {
   // Upload profile avatar
   async uploadAvatar(userId: string, file: File): Promise<string | null> {
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${userId}-${Date.now()}.${fileExt}`
-
-      const { data, error } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file)
-
-      if (error) {
-        console.error('Error uploading avatar:', error)
-        return null
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName)
-
-      return publicUrl
+      const formData = new FormData()
+      formData.append('avatar', file)
+      
+      const response = await api.post(`/profile/${userId}/avatar`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      
+      return response.data.avatarUrl
     } catch (error) {
       console.error('Error in uploadAvatar:', error)
       return null
