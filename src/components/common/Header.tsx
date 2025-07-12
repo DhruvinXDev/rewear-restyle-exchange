@@ -49,8 +49,8 @@ const Header = () => {
             <Link to="/browse" className="text-foreground hover:text-primary smooth-transition font-medium">
               Browse
             </Link>
-            <Link to="/add-item" className="text-foreground hover:text-primary smooth-transition font-medium">
-              List Item
+            <Link to="/add-listing" className="text-foreground hover:text-primary smooth-transition font-medium">
+              Add Listing
             </Link>
             <Link to="/dashboard" className="text-foreground hover:text-primary smooth-transition font-medium">
               Dashboard
@@ -64,12 +64,6 @@ const Header = () => {
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <>
-                <Link to="/profile">
-                  <Button variant="ghost" size="sm">
-                    <User className="w-4 h-4 mr-2" />
-                    Profile
-                  </Button>
-                </Link>
                 <Button variant="outline" size="sm" onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
@@ -109,8 +103,8 @@ const Header = () => {
             <Link to="/browse" className="block text-foreground hover:text-primary smooth-transition font-medium">
               Browse
             </Link>
-            <Link to="/add-item" className="block text-foreground hover:text-primary smooth-transition font-medium">
-              List Item
+            <Link to="/add-listing" className="block text-foreground hover:text-primary smooth-transition font-medium">
+              Add Listing
             </Link>
             <Link to="/dashboard" className="block text-foreground hover:text-primary smooth-transition font-medium">
               Dashboard
@@ -121,12 +115,6 @@ const Header = () => {
             <div className="flex space-x-4 pt-4">
               {user ? (
                 <>
-                  <Link to="/profile">
-                    <Button variant="ghost" size="sm" className="w-full">
-                      <User className="w-4 h-4 mr-2" />
-                      Profile
-                    </Button>
-                  </Link>
                   <Button variant="outline" size="sm" onClick={handleLogout} className="w-full">
                     <LogOut className="w-4 h-4 mr-2" />
                     Logout

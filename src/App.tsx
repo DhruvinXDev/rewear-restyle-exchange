@@ -14,7 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import ItemDetail from "./pages/ItemDetail";
 import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
-import Profile from "./pages/Profile";
+import AddListing from "./pages/AddListing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,9 +44,10 @@ const App = () => (
                 <Dashboard />
               </ProtectedRoute>
             } />
-            <Route path="/profile" element={
+
+            <Route path="/add-listing" element={
               <ProtectedRoute requireAuth>
-                <Profile />
+                <AddListing />
               </ProtectedRoute>
             } />
             <Route path="/item/:id" element={<ItemDetail />} />

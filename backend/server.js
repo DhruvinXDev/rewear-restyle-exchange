@@ -8,6 +8,7 @@ const fs = require('fs')
 const authRoutes = require('./routes/authRoutes')
 const profileRoutes = require('./routes/profileRoutes')
 const adminRoutes = require('./routes/adminRoutes')
+const listingRoutes = require('./routes/listingRoutes')
 
 const app = express()
 
@@ -35,12 +36,16 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads')
 const avatarsDir = path.join(uploadsDir, 'avatars')
+const listingsDir = path.join(uploadsDir, 'listings')
 
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir)
 }
 if (!fs.existsSync(avatarsDir)) {
   fs.mkdirSync(avatarsDir)
+}
+if (!fs.existsSync(listingsDir)) {
+  fs.mkdirSync(listingsDir)
 }
 
 // Serve static files
@@ -59,6 +64,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/profile', profileRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/listings', listingRoutes)
 
 // Error handling middleware
 app.use((err, req, res, next) => {
