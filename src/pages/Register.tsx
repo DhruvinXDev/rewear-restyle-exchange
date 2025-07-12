@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Link, useNavigate } from "react-router-dom"
 import { UserPlus, Eye, EyeOff, ArrowRight, Check } from "lucide-react"
-import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 
 const Register = () => {
@@ -23,7 +22,7 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+  
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Password mismatch",
@@ -32,52 +31,46 @@ const Register = () => {
       })
       return
     }
-
+  
     setIsLoading(true)
-
+  
     try {
-      const { error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: formData.name
-          }
-        }
-      })
-
-      if (error) {
-        if (error.message.includes("already registered")) {
-          toast({
-            title: "Account exists",
-            description: "This email is already registered. Please sign in instead.",
-            variant: "destructive"
-          })
-        } else {
-          toast({
-            title: "Registration failed",
-            description: error.message,
-            variant: "destructive"
-          })
-        }
+      const res = await fetch("http://localhost:3001/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password
+        })
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        toast({
+          title: "Registration failed",
+          description: data?.error || "Please try again.",
+          variant: "destructive"
+        });
       } else {
         toast({
           title: "Registration successful!",
-          description: "Please check your email to verify your account.",
-        })
-        navigate("/login")
+          description: "You can now log in with your credentials.",
+        });
+        navigate("/login");
       }
     } catch (error) {
       toast({
         title: "Registration failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: "Unexpected error occurred. Please try again.",
         variant: "destructive"
-      })
+      });
     } finally {
       setIsLoading(false)
     }
   }
+  
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({

@@ -51,7 +51,7 @@ class ProfileService {
   // Get user profile by user ID
   async getUserProfile(userId: string): Promise<UserProfile | null> {
     try {
-      const response = await api.get(`/profile/${userId}`)
+      const response = await api.get(`/profile/user/${userId}`)
       return response.data
     } catch (error) {
       console.error('Error fetching user profile:', error)
@@ -59,21 +59,12 @@ class ProfileService {
     }
   }
 
-  // Create or update user profile
-  async upsertUserProfile(profile: Partial<UserProfile>): Promise<UserProfile | null> {
-    try {
-      const response = await api.post('/profile', profile)
-      return response.data
-    } catch (error) {
-      console.error('Error upserting user profile:', error)
-      return null
-    }
-  }
+
 
   // Update user profile
   async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile | null> {
     try {
-      const response = await api.put(`/profile/${userId}`, updates)
+      const response = await api.put(`/profile/user/${userId}`, updates)
       return response.data
     } catch (error) {
       console.error('Error updating user profile:', error)
@@ -84,7 +75,7 @@ class ProfileService {
   // Get user's swap history
   async getSwapHistory(userId: string): Promise<SwapHistory[]> {
     try {
-      const response = await api.get(`/profile/${userId}/swaps`)
+      const response = await api.get(`/profile/user/${userId}/swaps`)
       return response.data
     } catch (error) {
       console.error('Error fetching swap history:', error)
@@ -95,7 +86,7 @@ class ProfileService {
   // Get user's points history
   async getPointsHistory(userId: string): Promise<PointsHistory[]> {
     try {
-      const response = await api.get(`/profile/${userId}/points`)
+      const response = await api.get(`/profile/user/${userId}/points`)
       return response.data
     } catch (error) {
       console.error('Error fetching points history:', error)
@@ -106,7 +97,7 @@ class ProfileService {
   // Add points to user
   async addPoints(userId: string, points: number, action: string, description: string): Promise<boolean> {
     try {
-      const response = await api.post(`/profile/${userId}/points`, {
+      const response = await api.post(`/profile/user/${userId}/points`, {
         points,
         action,
         description
@@ -130,19 +121,9 @@ class ProfileService {
 
   // Create initial profile for new user
   async createInitialProfile(user: User): Promise<UserProfile | null> {
-    const profile: Partial<UserProfile> = {
-      id: user.id,
-      email: user.email || '',
-      name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-      phone: user.user_metadata?.phone || '',
-      bio: user.user_metadata?.bio || '',
-      avatar_url: user.user_metadata?.avatar_url || '',
-      points: 0,
-      role: 'user',
-      referral_code: this.generateReferralCode()
-    }
-
-    return this.upsertUserProfile(profile)
+    // This method is no longer needed as profiles are created during registration
+    // Return null to indicate no action needed
+    return null
   }
 
   // Upload profile avatar
@@ -151,7 +132,7 @@ class ProfileService {
       const formData = new FormData()
       formData.append('avatar', file)
       
-      const response = await api.post(`/profile/${userId}/avatar`, formData, {
+      const response = await api.post(`/profile/user/${userId}/avatar`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
