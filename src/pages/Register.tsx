@@ -2,23 +2,81 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { UserPlus, Eye, EyeOff, ArrowRight, Check } from "lucide-react"
+import { supabase } from "@/integrations/supabase/client"
+import { useToast } from "@/hooks/use-toast"
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: ""
   })
+  
+  const navigate = useNavigate()
+  const { toast } = useToast()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle registration logic here
-    console.log("Register:", formData)
+    
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Password mismatch",
+        description: "Passwords do not match. Please try again.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            full_name: formData.name
+          }
+        }
+      })
+
+      if (error) {
+        if (error.message.includes("already registered")) {
+          toast({
+            title: "Account exists",
+            description: "This email is already registered. Please sign in instead.",
+            variant: "destructive"
+          })
+        } else {
+          toast({
+            title: "Registration failed",
+            description: error.message,
+            variant: "destructive"
+          })
+        }
+      } else {
+        toast({
+          title: "Registration successful!",
+          description: "Please check your email to verify your account.",
+        })
+        navigate("/login")
+      }
+    } catch (error) {
+      toast({
+        title: "Registration failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,9 +213,10 @@ const Register = () => {
             <Button
               type="submit"
               className="w-full btn-primary h-12 animate-pulse-glow"
-              disabled={!isPasswordMatch}
+              disabled={!isPasswordMatch || isLoading}
             >
-              Create Account <ArrowRight className="w-5 h-5 ml-2" />
+              {isLoading ? "Creating Account..." : "Create Account"} 
+              {!isLoading && <ArrowRight className="w-5 h-5 ml-2" />}
             </Button>
 
             <div className="relative">

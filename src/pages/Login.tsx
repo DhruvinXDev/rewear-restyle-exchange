@@ -2,20 +2,54 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { User, Eye, EyeOff, ArrowRight } from "lucide-react"
+import { supabase } from "@/integrations/supabase/client"
+import { useToast } from "@/hooks/use-toast"
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
     password: ""
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const navigate = useNavigate()
+  const { toast } = useToast()
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle login logic here
-    console.log("Login:", formData)
+    setIsLoading(true)
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      })
+
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive"
+        })
+      } else {
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully signed in.",
+        })
+        navigate("/")
+      }
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,8 +134,10 @@ const Login = () => {
             <Button
               type="submit"
               className="w-full btn-primary h-12 animate-pulse-glow"
+              disabled={isLoading}
             >
-              Sign In <ArrowRight className="w-5 h-5 ml-2" />
+              {isLoading ? "Signing In..." : "Sign In"} 
+              {!isLoading && <ArrowRight className="w-5 h-5 ml-2" />}
             </Button>
 
             <div className="relative">
