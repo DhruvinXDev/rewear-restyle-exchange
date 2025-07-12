@@ -14,13 +14,155 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      user_profiles: {
+        Row: {
+          id: string
+          email: string
+          name: string
+          phone: string | null
+          bio: string | null
+          avatar_url: string | null
+          points: number
+          role: 'user' | 'admin'
+          referral_code: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email: string
+          name: string
+          phone?: string | null
+          bio?: string | null
+          avatar_url?: string | null
+          points?: number
+          role?: 'user' | 'admin'
+          referral_code: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          name?: string
+          phone?: string | null
+          bio?: string | null
+          avatar_url?: string | null
+          points?: number
+          role?: 'user' | 'admin'
+          referral_code?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      listings: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          description: string | null
+          image_url: string | null
+          category: string | null
+          condition: string | null
+          points: number
+          status: 'pending' | 'approved' | 'rejected' | 'spam'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          description?: string | null
+          image_url?: string | null
+          category?: string | null
+          condition?: string | null
+          points?: number
+          status?: 'pending' | 'approved' | 'rejected' | 'spam'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          description?: string | null
+          image_url?: string | null
+          category?: string | null
+          condition?: string | null
+          points?: number
+          status?: 'pending' | 'approved' | 'rejected' | 'spam'
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      swap_history: {
+        Row: {
+          id: string
+          sender_id: string
+          receiver_id: string
+          listing_id: string
+          status: 'pending' | 'completed' | 'cancelled'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          sender_id: string
+          receiver_id: string
+          listing_id: string
+          status?: 'pending' | 'completed' | 'cancelled'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          sender_id?: string
+          receiver_id?: string
+          listing_id?: string
+          status?: 'pending' | 'completed' | 'cancelled'
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      points_history: {
+        Row: {
+          id: string
+          user_id: string
+          points: number
+          action: string
+          description: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          points: number
+          action: string
+          description?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          points?: number
+          action?: string
+          description?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_points: {
+        Args: {
+          user_id: string
+          points_to_add: number
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

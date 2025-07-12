@@ -1,9 +1,10 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { 
   Users, 
   Package, 
@@ -15,17 +16,121 @@ import {
   Trash2,
   CheckCircle,
   XCircle,
-  MoreVertical
+  MoreVertical,
+  AlertTriangle,
+  LogOut,
+  Loader2
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/hooks/useAuth"
+import { useNavigate } from "react-router-dom"
+import { useToast } from "@/hooks/use-toast"
+import { profileService } from "@/services/profileService"
 import Header from "@/components/common/Header"
 import product1 from "@/assets/product-1.jpg"
 import product2 from "@/assets/product-2.jpg"
 import product3 from "@/assets/product-3.jpg"
 
 const Admin = () => {
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
+  const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedTab, setSelectedTab] = useState("users")
+
+  // Check if user is admin by fetching from database
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!user) {
+        setIsAdmin(false)
+        setIsLoading(false)
+        return
+      }
+
+      try {
+        const profile = await profileService.getUserProfile(user.id)
+        if (profile && profile.role === 'admin') {
+          setIsAdmin(true)
+        } else {
+          setIsAdmin(false)
+          toast({
+            title: "Access Denied",
+            description: "You don't have permission to access the admin panel. Please use admin login.",
+            variant: "destructive"
+          })
+          navigate("/admin-login")
+        }
+      } catch (error) {
+        console.error('Error checking admin role:', error)
+        setIsAdmin(false)
+        toast({
+          title: "Error",
+          description: "Failed to verify admin permissions.",
+          variant: "destructive"
+        })
+        navigate("/admin-login")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkAdminRole()
+  }, [user, navigate, toast])
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      toast({
+        title: "Logged out successfully",
+        description: "You have been signed out of your account.",
+      })
+      navigate("/")
+    } catch (error) {
+      toast({
+        title: "Logout failed",
+        description: "An error occurred while signing out.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Verifying admin permissions...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <AlertTriangle className="w-16 h-16 mx-auto text-destructive mb-4" />
+            <CardTitle>Access Denied</CardTitle>
+            <CardDescription>
+              You don't have permission to access the admin panel.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <Button onClick={() => navigate("/admin-login")}>
+              Go to Admin Login
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/")}>
+              Go Back Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   // Mock data
   const users = [
@@ -129,10 +234,66 @@ const Admin = () => {
 
   const handleUserAction = (userId: string, action: string) => {
     console.log(`${action} user ${userId}`)
+    
+    switch (action) {
+      case 'ban':
+        toast({
+          title: "User Banned",
+          description: "User has been banned successfully.",
+          variant: "destructive"
+        })
+        break
+      case 'unban':
+        toast({
+          title: "User Unbanned",
+          description: "User has been unbanned successfully.",
+        })
+        break
+      case 'promote':
+        toast({
+          title: "User Promoted",
+          description: "User has been promoted to admin successfully.",
+        })
+        break
+      case 'delete':
+        toast({
+          title: "User Deleted",
+          description: "User has been deleted successfully.",
+          variant: "destructive"
+        })
+        break
+      default:
+        break
+    }
   }
 
   const handleListingAction = (listingId: string, action: string) => {
     console.log(`${action} listing ${listingId}`)
+    
+    switch (action) {
+      case 'approve':
+        toast({
+          title: "Listing Approved",
+          description: "Listing has been approved successfully.",
+        })
+        break
+      case 'reject':
+        toast({
+          title: "Listing Rejected",
+          description: "Listing has been rejected successfully.",
+          variant: "destructive"
+        })
+        break
+      case 'delete':
+        toast({
+          title: "Listing Deleted",
+          description: "Listing has been deleted successfully.",
+          variant: "destructive"
+        })
+        break
+      default:
+        break
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -160,13 +321,25 @@ const Admin = () => {
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Admin Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Admin Panel
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Manage users, listings, and platform operations
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Admin Panel
+            </h1>
+            <p className="text-xl text-muted-foreground">
+              Manage users, listings, and platform operations
+            </p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">Logged in as</p>
+              <p className="font-medium">{user?.email}</p>
+            </div>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Stats Overview */}
